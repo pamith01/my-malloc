@@ -92,5 +92,22 @@ void free_memory(Block* ptr)
 /* Testing the implementation */
 int main()
 {
+    int* data = (int*)my_malloc(10 * sizeof(int));
+
+    for (int i=0;i<10;i++)
+    {
+        data[i] = 10 * i;
+        printf("%d ", data[i]);
+    }
+
+    printf("\nMemory Allocated at %p", (void*)data);
+
+    free_memory(data);
+
+    int* data2 = (int*)my_malloc(5 * sizeof(int));
+
+    printf("\nMemory Allocated at %p", (void*)data2);
+    //should be the same as above
+
     return 0;
 }

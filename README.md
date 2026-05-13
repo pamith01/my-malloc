@@ -30,11 +30,11 @@ There are 5 components:
 3. Requesting Space from the OS: If we don’t find a free block we use sbrk(). This system call moves the "program break" (the end of the heap) effectively to provide more memory.
 
 4. Final Malloc Implementation
-It ties everything together
-1. Validates the size
-2. Checks for existing free block
-3. Requests new space if needed
-4. Returns pointer to memory after the header
+    It ties everything together
+    Validates the size
+    Checks for existing free block
+    Requests new space if needed
+    Returns pointer to memory after the header
 
 5. Free the memory: Free the memory after use.
 Set the free attribute of the memory's block header to 0.

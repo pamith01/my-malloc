@@ -79,6 +79,16 @@ Block* my_malloc(size_t size)
 
 }
 
+/* Free the memory */
+void free_memory(Block* ptr)
+{
+    if (!ptr)
+    {
+        return;
+    }
+    ptr->free = 0;
+}
+
 /* Testing the implementation */
 int main()
 {

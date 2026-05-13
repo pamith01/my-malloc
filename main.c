@@ -1,81 +1,86 @@
-/* Block Header - stored bore each block */
-struct block_meta
-{
-    size_t size;            // Size of block including header
-    struct block_meta *next;// Next free block (only used if free) 
-    int free;               // 1 if free, 0 if allocated
-};
+#include <stdio.h>
+#include <stddef.h>
 
-/* Memory layout after malloc(100) returns: 
-[ header (size=108, next=?, free=0) ][ 100 usable bytes for caller ]
-                                        ^-- returned pointer points here
+/* The Block Header */
+typedef struct Block
+{
+    size_t size;
+    int free;
+    struct Block* next;
+}Block;
+
+#define BLOCK_SIZE sizeof(Block)
+
+/* Find free block in the memory - First Fit Algorithm */
+/*
+Block A     Block B     Block C     Block D     End
+ Used   free 10 bytes    Used        Used      of List
 */
-
-void * heap_start = NULL; // First block's header address
-struct block_meta *free_list = NULL; //Head of explicit free list 
-
-/* First call to malloc initializes the heap */
-
-/* Phase-1: Getting memory from the OS (helper function) */
-void* request_from_os(size_t size)
+Block* find_free_block(Block** last, size_t size, Block* base)
 {
-    void* new_memory = sbrk(size);
-    if (new_memory == (void*)-1)
+    Block *current = base;
+    while (current && !(current->free && current->size >= size))
     {
-        perror("sbrk failed\n");
-        return NULL;
-    }
-    return new_memory;
-}
-
-/* Phase-2: Heap Initialization */
-// Task: when free list is NULL, initialize heap 
-if (free_list == NULL)
-{
-    // Get initial pool from OS eg. 16KB
-    void *pool = request_from_os(16 * 1024);
-    if (!pool) return NULL;
-
-    // Create first block header at pool
-    struct block_meta *first = (struct block_meta*)pool;
-    first->size = 16*1024; //entire pool size 
-    first->free = 1;
-    first->next = NULL;
-    
-    // Set free_list to this block
-    free_list = first;
-
-/* Phase-3: Free List Search (First-fit) */
-// Task: Find the first free block with size>= requested size 
-
-struct block_meta *find_free_block(size_t requested_size)
-{
-    struct block_meta *current = free_list;
-
-    while(current)
-    {
-        if (current->free && current->size >= requested_size)
-        {
-            return current; //Found suitable block 
-        }
-
+        *last = current;
         current = current->next;
     }
-    return NULL; //No block found
+    return current;
 }
 
-/* Phase-4: Allocation (Mark block as used)*/
-// Task: From the found free block, mark it allocated.
-struct block_meta *block = find_free_block(total_size);
-if (block)
+/* Request from OS */
+Block* request_space(Block* last, size_t size)
 {
+    Block* block = sbrk(0); //Get the current position
+    Block* request = sbrk(size + BLOCK_SIZE);
+
+    if (request == (void *)-1)
+    {
+        return NULL; // sbrk failed
+    }
+
+    if (last) last->next = block;
+    block->size = size;
     block->free = 0;
+    block->next = NULL;
+    return block;
 }
 
-//Remove from free list 
-//Need to find previous node in free_list to unlink
-// traverse again or use doubly linked list 
+/* malloc implementation */
 
-return (void*)(block + 1); //pointer after the header
+void* base = NULL;
 
+Block* my_malloc(size_t size)
+{
+    Block* block;
+    if (size<=0) return NULL;
+
+    if (!base)
+    {
+        // first call
+        block = request_space(base, size);
+        if (!block) return NULL;
+        base = block;
+    }
+    else
+    {
+        Block* last = base;
+        block = find_free_block(&last, size, base);
+        if (!block)
+        {
+            block = request_space(last, size);
+            if (!block) return NULL;
+        }
+        else
+        {
+            block->free = 0;
+        }
+    }
+    return (block + 1); //pointer to the region after the header
+
+}
+
+/* Testing the implementation */
+int main()
+{
+    return 0;
 }
